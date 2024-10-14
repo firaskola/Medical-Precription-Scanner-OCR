@@ -208,7 +208,7 @@ class _NavdrawerState extends State<Navdrawer> {
             currentAccountPicture: CircleAvatar(
               child: ClipOval(
                 child: Image.asset(
-                  'assets/prescription.jpg',
+                  'assets/profile.jpg',
                   width: 90,
                   height: 90,
                   fit: BoxFit.cover,
@@ -218,7 +218,7 @@ class _NavdrawerState extends State<Navdrawer> {
             decoration: BoxDecoration(
               color: const Color.fromARGB(255, 235, 193, 102),
               image: DecorationImage(
-                image: const AssetImage('assets/med.jpg'),
+                image: const AssetImage('assets/banner.jpg'),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
                   Colors.black.withOpacity(0.3),
