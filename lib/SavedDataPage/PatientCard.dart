@@ -28,10 +28,10 @@ class PatientCard extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16.0),
         ),
-        elevation: 5,
+        elevation: 2,
         child: Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
+            color: const Color.fromARGB(255, 246, 246, 246),
             borderRadius: BorderRadius.circular(16.0),
           ),
           child: Stack(
@@ -50,7 +50,7 @@ class PatientCard extends StatelessWidget {
                           children: [
                             Icon(
                               CupertinoIcons.person_fill,
-                              color: Theme.of(context).primaryColorLight,
+                              color: Theme.of(context).primaryColor,
                             ),
                             const SizedBox(width: 6),
                             Text(
@@ -66,7 +66,7 @@ class PatientCard extends StatelessWidget {
                           children: [
                             Icon(
                               CupertinoIcons.number,
-                              color: Theme.of(context).primaryColorLight,
+                              color: Theme.of(context).primaryColor,
                             ),
                             const SizedBox(width: 6),
                             Text(
@@ -81,20 +81,21 @@ class PatientCard extends StatelessWidget {
                       ],
                     ),
                     Divider(
-                      color: Theme.of(context).primaryColorLight,
+                      color: Theme.of(context).primaryColor,
                     ),
+                    // Swap places of doctor and date
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Row(
                           children: [
                             Icon(
-                              CupertinoIcons.calendar,
-                              color: Theme.of(context).primaryColorLight,
+                              CupertinoIcons.person_crop_circle_fill,
+                              color: Theme.of(context).primaryColor,
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              date,
+                              doctorConsulted,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
@@ -105,12 +106,12 @@ class PatientCard extends StatelessWidget {
                         Row(
                           children: [
                             Icon(
-                              CupertinoIcons.person_crop_circle_fill,
-                              color: Theme.of(context).primaryColorLight,
+                              CupertinoIcons.calendar,
+                              color: Theme.of(context).primaryColor,
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              doctorConsulted,
+                              date,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
@@ -131,12 +132,12 @@ class PatientCard extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(6), // Padding around the icon
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0),
+                      color: Colors.grey.withOpacity(0.0),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       CupertinoIcons.clear,
-                      color: Colors.white,
+                      color: Colors.black,
                       size: 18.0,
                     ),
                   ),

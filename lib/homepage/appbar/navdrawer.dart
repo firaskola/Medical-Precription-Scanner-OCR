@@ -54,6 +54,35 @@ class _NavdrawerState extends State<Navdrawer> {
     // Navigate back to login or any other page after sign-out if needed
   }
 
+  // Confirmation dialog for sign-out
+  void _confirmSignOut() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Sign Out'),
+          content: const Text('Are you sure you want to sign out?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                await signout();
+                Navigator.of(context).pop(); // Close the dialog
+                // Optionally navigate to the login page or perform other actions
+              },
+              child: const Text('Sign Out'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showImageTypeOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -219,7 +248,7 @@ class _NavdrawerState extends State<Navdrawer> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            onTap: signout,
+            onTap: _confirmSignOut, // Call the confirmation method
           ),
           const Divider(),
         ],
