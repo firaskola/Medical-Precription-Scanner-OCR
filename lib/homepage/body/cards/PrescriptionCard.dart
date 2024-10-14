@@ -1,32 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:camera/camera.dart';
 
 class PrescriptionCard extends StatelessWidget {
   const PrescriptionCard({super.key});
 
-  Future<void> _takePicture(BuildContext context) async {
-    // Request camera permission
-    final status = await Permission.camera.request();
-
-    if (status.isGranted) {
-      // Permission granted, proceed with taking a picture
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: ImageSource.camera);
-
-      if (image != null) {
-        // Process the image here (e.g., display or upload)
-        print("Image path: ${image.path}");
+  Future<bool> isCameraAvailable() async {
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isNotEmpty) {
+        // Log camera details
+        cameras.forEach((camera) {
+          print('Camera found: ${camera.name}');
+        });
+        return true;
       } else {
-        print('No image selected');
+        print("No cameras found.");
+        return false;
       }
+    } catch (e) {
+      print("Camera error: $e");
+      return false;
+    }
+  }
+
+  Future<void> _pickImage(BuildContext context, ImageSource source) async {
+    // Check if the camera is requested
+    if (source == ImageSource.camera) {
+      // Check if the camera is available
+      final cameraAvailable = await isCameraAvailable();
+      if (!cameraAvailable) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Camera is not available")),
+        );
+        return;
+      }
+    }
+
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: source);
+
+    if (image != null) {
+      // Process the image here (e.g., display or upload)
+      print("Image path: ${image.path}");
     } else {
-      // Handle permission denial
-      print("Camera permission denied");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Camera permission denied")),
-      );
+      print('No image selected');
     }
   }
 
@@ -34,10 +53,11 @@ class PrescriptionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(
-          top: 16.0,
-          left: 16.0,
-          right: 16.0,
-          bottom: 0.0), // Standard margin around the container
+        top: 16.0,
+        left: 16.0,
+        right: 16.0,
+        bottom: 0.0,
+      ), // Standard margin around the container
       child: AspectRatio(
         aspectRatio: 16 / 9, // Set the aspect ratio to 16:9
         child: Container(
@@ -71,23 +91,24 @@ class PrescriptionCard extends StatelessWidget {
                     padding: const EdgeInsets.all(8.0),
                     child: TextButton(
                       style: ButtonStyle(
-                        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                        shape:
+                            MaterialStateProperty.all<RoundedRectangleBorder>(
                           RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        backgroundColor: WidgetStateProperty.all<Color>(
-                            Theme.of(context).primaryColor),
+                        backgroundColor: MaterialStateProperty.all<Color>(
+                          Theme.of(context).primaryColor,
+                        ),
                         foregroundColor:
-                            WidgetStateProperty.all<Color>(Colors.black),
+                            MaterialStateProperty.all<Color>(Colors.black),
                       ),
                       onPressed: () {
                         showModalBottomSheet(
                           context: context,
                           shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(20),
-                            ),
+                            borderRadius:
+                                BorderRadius.vertical(top: Radius.circular(20)),
                           ),
                           builder: (BuildContext context) {
                             return Padding(
@@ -98,8 +119,7 @@ class PrescriptionCard extends StatelessWidget {
                                   InkWell(
                                     borderRadius: BorderRadius.circular(8),
                                     onTap: () {
-                                      // Call the _takePicture method
-                                      _takePicture(context);
+                                      _pickImage(context, ImageSource.gallery);
                                       Navigator.pop(context);
                                     },
                                     child: ListTile(
@@ -122,7 +142,7 @@ class PrescriptionCard extends StatelessWidget {
                                   InkWell(
                                     borderRadius: BorderRadius.circular(8),
                                     onTap: () {
-                                      _takePicture(context);
+                                      _pickImage(context, ImageSource.camera);
                                       Navigator.pop(context);
                                     },
                                     child: ListTile(

@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
 
 class Navdrawer extends StatefulWidget {
   const Navdrawer({super.key});
@@ -14,6 +15,7 @@ class _NavdrawerState extends State<Navdrawer> {
   final User? user = FirebaseAuth.instance.currentUser;
   String? firstName;
   String? lastName;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -27,9 +29,8 @@ class _NavdrawerState extends State<Navdrawer> {
       try {
         QuerySnapshot querySnapshot = await FirebaseFirestore.instance
             .collection('Medicare')
-            .doc('users') // Assuming 'users' is a document under 'Medicare'
-            .collection(
-                'users') // Assuming 'users' is also a sub-collection if this is not correct adjust accordingly
+            .doc('users')
+            .collection('users')
             .where('email', isEqualTo: userEmail)
             .get();
 
@@ -51,6 +52,109 @@ class _NavdrawerState extends State<Navdrawer> {
   Future<void> signout() async {
     await FirebaseAuth.instance.signOut();
     // Navigate back to login or any other page after sign-out if needed
+  }
+
+  void _showImageTypeOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: Icon(CupertinoIcons.photo,
+                    color: Theme.of(context).primaryColor),
+                title: const Text('Upload Banner Image'),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showImageSourceOptions(context, 'banner');
+                },
+              ),
+              Divider(
+                color: Theme.of(context).primaryColor,
+                thickness: 1.0,
+                indent: 8.0,
+                endIndent: 8.0,
+              ),
+              ListTile(
+                leading: Icon(CupertinoIcons.person_crop_circle,
+                    color: Theme.of(context).primaryColor),
+                title: const Text('Upload Profile Image'),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showImageSourceOptions(context, 'profile');
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showImageSourceOptions(BuildContext context, String type) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: Icon(CupertinoIcons.photo_on_rectangle,
+                    color: Theme.of(context).primaryColor),
+                title: const Text('Upload Image'),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.gallery, type);
+                },
+              ),
+              Divider(
+                color: Theme.of(context).primaryColor,
+                thickness: 1.0,
+                indent: 8.0,
+                endIndent: 8.0,
+              ),
+              ListTile(
+                leading: Icon(CupertinoIcons.camera,
+                    color: Theme.of(context).primaryColor),
+                title: const Text('Take a Picture'),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage(ImageSource.camera, type);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source, String type) async {
+    try {
+      final XFile? image = await _picker.pickImage(source: source);
+      if (image != null) {
+        print('Image selected: ${image.path}');
+        // Handle the image file based on the 'type' (banner or profile)
+        // You can upload it to Firebase or use it locally in your app
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+    }
   }
 
   @override
@@ -95,13 +199,14 @@ class _NavdrawerState extends State<Navdrawer> {
             ),
           ),
           ListTile(
-            leading: const Icon(CupertinoIcons.cloud_upload),
+            leading: const Icon(
+              CupertinoIcons.cloud_upload,
+            ),
             title: const Text('Upload shot'),
             onTap: () {
-              // Implement navigation or functionality here
+              _showImageTypeOptions(context);
             },
           ),
-          // Other ListTiles ...
           ListTile(
             leading: const Icon(
               CupertinoIcons.square_arrow_right,
