@@ -102,8 +102,9 @@ class _SavedDataPageState extends State<SavedDataPage> {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: validPatients.length,
                   itemBuilder: (context, index) {
+                    final patientDoc = validPatients[index];
                     final patientData =
-                        validPatients[index].data() as Map<String, dynamic>;
+                        patientDoc.data() as Map<String, dynamic>;
 
                     // Safely retrieve each field
                     final patientName = patientData['patientName'];
@@ -127,6 +128,11 @@ class _SavedDataPageState extends State<SavedDataPage> {
                       doctorConsulted: doctorConsulted ?? 'No Doctor',
                       onTap: () {
                         print('Patient card tapped for $patientName!');
+                      },
+                      onClose: () async {
+                        await _deletePatient(
+                            patientDoc.id); // Call delete function
+                        setState(() {}); // Refresh the list after deletion
                       },
                     );
                   },
@@ -169,6 +175,20 @@ class _SavedDataPageState extends State<SavedDataPage> {
       for (var doc in patientsWithAgeZero.docs) {
         await doc.reference.delete();
       }
+    }
+  }
+
+  Future<void> _deletePatient(String patientId) async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await _firestore
+          .collection('Medicare')
+          .doc('users')
+          .collection('users')
+          .doc(user.uid)
+          .collection('patients')
+          .doc(patientId)
+          .delete();
     }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class PatientCard extends StatelessWidget {
   final String patientName;
@@ -6,6 +7,7 @@ class PatientCard extends StatelessWidget {
   final int age;
   final String doctorConsulted;
   final VoidCallback onTap;
+  final VoidCallback onClose;
 
   const PatientCard({
     super.key,
@@ -14,69 +16,133 @@ class PatientCard extends StatelessWidget {
     required this.age,
     required this.doctorConsulted,
     required this.onTap,
+    required this.onClose,
   });
 
   @override
   Widget build(BuildContext context) {
     return AspectRatio(
-      aspectRatio: 16 / 5,
+      aspectRatio: 16 / 6,
       child: Card(
-        color: const Color.fromARGB(255, 255, 235, 199),
-        elevation: 3,
-        margin: const EdgeInsets.all(8.0),
+        margin: const EdgeInsets.all(12.0),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
+          borderRadius: BorderRadius.circular(16.0),
         ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius:
-              BorderRadius.circular(8.0), // Matches Card's borderRadius
-          splashColor:
-              const Color(0xFFD9D9D9).withAlpha(30), // Custom splash color
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        elevation: 5,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor,
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    vertical: 24.0, horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Text(
-                      'Patient Name: $patientName',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              CupertinoIcons.person_fill,
+                              color: Theme.of(context).primaryColorLight,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              patientName,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Icon(
+                              CupertinoIcons.number,
+                              color: Theme.of(context).primaryColorLight,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Age: $age',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    Text(
-                      'Age: $age',
-                      style: const TextStyle(
-                        fontSize: 16,
-                      ),
+                    Divider(
+                      color: Theme.of(context).primaryColorLight,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              CupertinoIcons.calendar,
+                              color: Theme.of(context).primaryColorLight,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              date,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Icon(
+                              CupertinoIcons.person_crop_circle_fill,
+                              color: Theme.of(context).primaryColorLight,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              doctorConsulted,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Date: $date',
-                      style: const TextStyle(
-                        fontSize: 16,
-                      ),
+              ),
+              Positioned(
+                top: 4.0,
+                right: 4.0,
+                child: GestureDetector(
+                  onTap: onClose,
+                  child: Container(
+                    padding: const EdgeInsets.all(6), // Padding around the icon
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0),
+                      shape: BoxShape.circle,
                     ),
-                    Text(
-                      'Doctor: $doctorConsulted',
-                      style: const TextStyle(
-                        fontSize: 16,
-                      ),
+                    child: const Icon(
+                      CupertinoIcons.clear,
+                      color: Colors.white,
+                      size: 18.0,
                     ),
-                  ],
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
