@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:medicare/SavedDataPage/PatientCard.dart';
 import 'package:medicare/AddPatients/AddPatientPage.dart';
+import 'package:medicare/SavedDataPage/PatientDetails/patientDetails.dart'; // Import PatientDetails page
 
 class SavedDataPage extends StatefulWidget {
   const SavedDataPage({super.key});
@@ -58,7 +59,6 @@ class _SavedDataPageState extends State<SavedDataPage> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // If there's no data or the data is empty, show the message
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(
               child: Text(
@@ -72,15 +72,12 @@ class _SavedDataPageState extends State<SavedDataPage> {
           }
 
           final patients = snapshot.data!.docs;
-
-          // Filter patients to ensure only valid entries are displayed
           final validPatients = patients.where((patientDoc) {
             final patientData = patientDoc.data() as Map<String, dynamic>;
             final patientName = patientData['patientName'];
             return patientName != null && patientName.isNotEmpty;
           }).toList();
 
-          // Check if there are valid patients after filtering
           if (validPatients.isEmpty) {
             return const Center(
               child: Text(
@@ -97,8 +94,7 @@ class _SavedDataPageState extends State<SavedDataPage> {
             child: Column(
               children: [
                 ListView.builder(
-                  shrinkWrap:
-                      true, // Allows ListView to occupy only needed space
+                  shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: validPatients.length,
                   itemBuilder: (context, index) {
@@ -106,13 +102,11 @@ class _SavedDataPageState extends State<SavedDataPage> {
                     final patientData =
                         patientDoc.data() as Map<String, dynamic>;
 
-                    // Safely retrieve each field
                     final patientName = patientData['patientName'];
                     final date = patientData['date'];
                     final doctorConsulted = patientData['doctorConsulted'];
+                    int age = 0;
 
-                    // Handle age field to ensure it's an integer
-                    int age = 0; // Default value
                     if (patientData['age'] != null) {
                       if (patientData['age'] is int) {
                         age = patientData['age'];
@@ -127,12 +121,20 @@ class _SavedDataPageState extends State<SavedDataPage> {
                       age: age,
                       doctorConsulted: doctorConsulted ?? 'No Doctor',
                       onTap: () {
-                        print('Patient card tapped for $patientName!');
+                        // Navigate to PatientDetails page with the selected patient's ID
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PatientDetailsPage(
+                              patientId:
+                                  patientDoc.id, // Pass the patient ID here
+                            ),
+                          ),
+                        );
                       },
                       onClose: () async {
-                        await _deletePatient(
-                            patientDoc.id); // Call delete function
-                        setState(() {}); // Refresh the list after deletion
+                        await _deletePatient(patientDoc.id);
+                        setState(() {});
                       },
                     );
                   },
@@ -148,6 +150,7 @@ class _SavedDataPageState extends State<SavedDataPage> {
   Stream<QuerySnapshot> _getPatientsStream() {
     final user = _auth.currentUser;
     if (user != null) {
+      // Correct the path: patients directly under the user's document
       return _firestore
           .collection('Medicare')
           .doc('users')
