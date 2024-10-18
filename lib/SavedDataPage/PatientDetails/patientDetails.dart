@@ -1,13 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:medicare/SavedDataPage/PatientDetails/editPatientPage.dart';
 
 class PatientDetailsPage extends StatefulWidget {
-  final String patientId; // Pass the patient ID from Firebase
+  final String patientId;
 
   const PatientDetailsPage({
     Key? key,
-    required this.patientId, // Add patientId to fetch from Firestore
+    required this.patientId,
   }) : super(key: key);
 
   @override
@@ -15,7 +17,7 @@ class PatientDetailsPage extends StatefulWidget {
 }
 
 class _PatientDetailsPageState extends State<PatientDetailsPage> {
-  late DocumentSnapshot patientData; // To store the patient data from Firebase
+  late DocumentSnapshot patientData;
   bool isLoading = true;
 
   @override
@@ -26,7 +28,6 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
 
   Future<void> _fetchPatientDetails() async {
     try {
-      // Fetch the patient document from Firebase using the patient ID
       DocumentSnapshot doc = await FirebaseFirestore.instance
           .collection('Medicare')
           .doc('users')
@@ -45,45 +46,66 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     }
   }
 
+  void _navigateToEditPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditPatientPage(
+          patientId: widget.patientId,
+          patientData: patientData,
+        ),
+      ),
+    ).then((_) {
+      // Refresh the patient details after returning from the edit page
+      _fetchPatientDetails();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Patient Details'),
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Theme.of(context).primaryColorLight,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: const Icon(CupertinoIcons.chevron_back),
+        ),
+        title: const Text(
+          'Patient Details',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: _navigateToEditPage,
+          ),
+        ],
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator()) // Loading state
+          ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Patient Name: ${patientData['patientName']}',
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
+                    _buildDetailCard(
+                        'Patient Name', patientData['patientName']),
                     const SizedBox(height: 10),
-                    Text(
-                      'Date: ${patientData['date']}',
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    _buildDetailCard('Date', patientData['date']),
                     const SizedBox(height: 10),
-                    Text(
-                      'Age: ${patientData['age']}',
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    _buildDetailCard('Age', patientData['age'].toString()),
                     const SizedBox(height: 10),
-                    Text(
-                      'Doctor Consulted: ${patientData['doctorConsulted']}',
-                      style: const TextStyle(fontSize: 16),
-                    ),
+                    _buildDetailCard(
+                        'Doctor Consulted', patientData['doctorConsulted']),
                     const SizedBox(height: 10),
                     const Text(
                       'Medicines:',
                       style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 6),
                     _buildMedicineList(patientData['medicines']),
@@ -94,7 +116,31 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     );
   }
 
-  // Method to display the list of medicines
+  Widget _buildDetailCard(String title, String content) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            Text(
+              content,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMedicineList(List<dynamic> medicines) {
     if (medicines.isEmpty) {
       return const Text(
@@ -106,9 +152,12 @@ class _PatientDetailsPageState extends State<PatientDetailsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: medicines
-          .map((medicine) => Text(
-                '- $medicine',
-                style: const TextStyle(fontSize: 16),
+          .map((medicine) => Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Text(
+                  '- $medicine',
+                  style: const TextStyle(fontSize: 16),
+                ),
               ))
           .toList(),
     );
