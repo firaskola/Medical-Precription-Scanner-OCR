@@ -73,7 +73,7 @@ class PrescriptionCard extends StatelessWidget {
                   'Prescription Scanner',
                   style: TextStyle(
                     color: Theme.of(context).primaryColorLight,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     fontSize: 16,
                   ),
                 ),
@@ -83,7 +83,7 @@ class PrescriptionCard extends StatelessWidget {
                 bottom: 16.0, // Bottom margin
                 child: SizedBox(
                   width: MediaQuery.of(context).size.width *
-                      0.33, // Set button width to 33% of screen width
+                      0.35, // Set button width to 35% of screen width
                   child: TextButton(
                     style: ButtonStyle(
                       shape: WidgetStateProperty.all<RoundedRectangleBorder>(
