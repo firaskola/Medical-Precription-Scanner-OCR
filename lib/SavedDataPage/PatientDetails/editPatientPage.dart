@@ -8,10 +8,10 @@ class EditPatientPage extends StatefulWidget {
   final DocumentSnapshot patientData;
 
   const EditPatientPage({
-    Key? key,
+    super.key,
     required this.patientId,
     required this.patientData,
-  }) : super(key: key);
+  });
 
   @override
   _EditPatientPageState createState() => _EditPatientPageState();

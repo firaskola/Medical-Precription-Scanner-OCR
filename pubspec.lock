@@ -37,10 +37,10 @@ packages:
     dependency: transitive
     description:
       name: camera_android
-      sha256: "9ee9d18cf9c9bc2d3fa21de693ef3377b4ac327be6406d2a87577e4e0f1e203f"
+      sha256: "387c9861dc026b980e5ff16c949c5bcfecafa8825b8b74e41b24405eb9d39af6"
       url: "https://pub.dev"
     source: hosted
-    version: "0.10.9+13"
+    version: "0.10.9+14"
   camera_avfoundation:
     dependency: transitive
     description:

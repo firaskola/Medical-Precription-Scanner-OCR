@@ -8,9 +8,9 @@ class PatientDetailsPage extends StatefulWidget {
   final String patientId;
 
   const PatientDetailsPage({
-    Key? key,
+    super.key,
     required this.patientId,
-  }) : super(key: key);
+  });
 
   @override
   _PatientDetailsPageState createState() => _PatientDetailsPageState();
