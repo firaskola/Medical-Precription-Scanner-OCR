@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 
 class Navdrawer extends StatefulWidget {
@@ -15,12 +18,15 @@ class _NavdrawerState extends State<Navdrawer> {
   final User? user = FirebaseAuth.instance.currentUser;
   String? firstName;
   String? lastName;
+  String? profileImageUrl;
+  String? bannerImageUrl;
   final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
     fetchUserData();
+    fetchProfileAndBannerImages();
   }
 
   Future<void> fetchUserData() async {
@@ -49,58 +55,46 @@ class _NavdrawerState extends State<Navdrawer> {
     }
   }
 
-  Future<void> signout() async {
-    await FirebaseAuth.instance.signOut();
-    // Navigate back to login or any other page after sign-out if needed
+  Future<void> fetchProfileAndBannerImages() async {
+    try {
+      // Fetch profile image
+      String profilePath = 'users/${user!.uid}/profile.jpg';
+      profileImageUrl = await FirebaseStorage.instance
+          .ref(profilePath)
+          .getDownloadURL()
+          .catchError((_) => null); // Use default if not found
+
+      // Fetch banner image
+      String bannerPath = 'users/${user!.uid}/banner.jpg';
+      bannerImageUrl = await FirebaseStorage.instance
+          .ref(bannerPath)
+          .getDownloadURL()
+          .catchError((_) => null); // Use default if not found
+
+      setState(() {});
+    } catch (e) {
+      print('Error fetching images: $e');
+    }
   }
 
-  void _confirmSignOut() {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
-          child: Wrap(
-            children: <Widget>[
-              ListTile(
-                leading: Icon(CupertinoIcons.square_arrow_right,
-                    color: Colors.redAccent),
-                title: const Text(
-                  'Sign Out',
-                  style: TextStyle(
-                      color: Colors.redAccent, fontWeight: FontWeight.bold),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await signout();
-                  // Optionally navigate to the login page or perform other actions after signing out
-                },
-              ),
-              Divider(
-                color: Theme.of(context).primaryColor,
-                thickness: 1.0,
-                indent: 8.0,
-                endIndent: 8.0,
-              ),
-              ListTile(
-                leading: Icon(CupertinoIcons.xmark,
-                    color: Theme.of(context).primaryColor),
-                title: const Text('Cancel'),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                onTap: () {
-                  Navigator.pop(context); // Close the bottom sheet
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  Future<void> uploadImage(String type, XFile image) async {
+    try {
+      String imagePath = 'users/${user!.uid}/$type.jpg';
+      await FirebaseStorage.instance.ref(imagePath).putFile(File(image.path));
+      await fetchProfileAndBannerImages();
+    } catch (e) {
+      print('Error uploading image: $e');
+    }
+  }
+
+  Future<void> removeImage(String type) async {
+    try {
+      String imagePath = 'users/${user!.uid}/$type.jpg';
+      await FirebaseStorage.instance.ref(imagePath).delete();
+      await fetchProfileAndBannerImages();
+    } catch (e) {
+      print('Error removing image: $e');
+    }
   }
 
   void _showImageTypeOptions(BuildContext context) {
@@ -141,11 +135,59 @@ class _NavdrawerState extends State<Navdrawer> {
                   _showImageSourceOptions(context, 'profile');
                 },
               ),
+              Divider(
+                color: Theme.of(context).primaryColor,
+                thickness: 1.0,
+                indent: 8.0,
+                endIndent: 8.0,
+              ),
+              ListTile(
+                leading: Icon(CupertinoIcons.delete,
+                    color: Theme.of(context).primaryColor),
+                title: const Text('Remove Banner Image'),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  removeImage('banner');
+                },
+              ),
+              Divider(
+                color: Theme.of(context).primaryColor,
+                thickness: 1.0,
+                indent: 8.0,
+                endIndent: 8.0,
+              ),
+              ListTile(
+                leading: Icon(CupertinoIcons.delete,
+                    color: Theme.of(context).primaryColor),
+                title: const Text('Remove Profile Image'),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  removeImage('profile');
+                },
+              ),
             ],
           ),
         );
       },
     );
+  }
+
+  Future<void> _pickImage(ImageSource source, String type) async {
+    try {
+      final XFile? image = await _picker.pickImage(source: source);
+      if (image != null) {
+        print('Image selected: ${image.path}');
+        await uploadImage(type, image);
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+    }
   }
 
   void _showImageSourceOptions(BuildContext context, String type) {
@@ -193,19 +235,6 @@ class _NavdrawerState extends State<Navdrawer> {
     );
   }
 
-  Future<void> _pickImage(ImageSource source, String type) async {
-    try {
-      final XFile? image = await _picker.pickImage(source: source);
-      if (image != null) {
-        print('Image selected: ${image.path}');
-        // Handle the image file based on the 'type' (banner or profile)
-        // You can upload it to Firebase or use it locally in your app
-      }
-    } catch (e) {
-      print('Error picking image: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -227,18 +256,23 @@ class _NavdrawerState extends State<Navdrawer> {
             ),
             currentAccountPicture: CircleAvatar(
               child: ClipOval(
-                child: Image.asset(
-                  'assets/profile.jpg',
-                  width: 90,
-                  height: 90,
-                  fit: BoxFit.cover,
-                ),
+                child: profileImageUrl != null
+                    ? Image.network(profileImageUrl!,
+                        width: 90, height: 90, fit: BoxFit.cover)
+                    : Image.asset(
+                        'assets/profile.jpg',
+                        width: 90,
+                        height: 90,
+                        fit: BoxFit.cover,
+                      ),
               ),
             ),
             decoration: BoxDecoration(
               color: const Color.fromARGB(255, 235, 193, 102),
               image: DecorationImage(
-                image: const AssetImage('assets/banner.jpg'),
+                image: bannerImageUrl != null
+                    ? NetworkImage(bannerImageUrl!)
+                    : const AssetImage('assets/banner.jpg') as ImageProvider,
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
                   Colors.black.withOpacity(0.3),
@@ -263,14 +297,13 @@ class _NavdrawerState extends State<Navdrawer> {
             ),
             title: const Text(
               'Signout',
-              style: TextStyle(
-                color: Color.fromARGB(255, 255, 0, 0),
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(color: Color.fromARGB(255, 255, 0, 0)),
             ),
-            onTap: _confirmSignOut, // Call the confirmation method
+            onTap: () async {
+              await FirebaseAuth.instance.signOut();
+              Navigator.pushReplacementNamed(context, '/login');
+            },
           ),
-          const Divider(),
         ],
       ),
     );
