@@ -59,19 +59,25 @@ class _NavdrawerState extends State<Navdrawer> {
     try {
       // Fetch profile image
       String profilePath = 'users/${user!.uid}/profile.jpg';
-      profileImageUrl = await FirebaseStorage.instance
-          .ref(profilePath)
-          .getDownloadURL()
-          .catchError((_) => null); // Use default if not found
+      try {
+        profileImageUrl =
+            await FirebaseStorage.instance.ref(profilePath).getDownloadURL();
+      } catch (e) {
+        print('Profile image not found: $e');
+        profileImageUrl = null; // Set to null if not found
+      }
 
       // Fetch banner image
       String bannerPath = 'users/${user!.uid}/banner.jpg';
-      bannerImageUrl = await FirebaseStorage.instance
-          .ref(bannerPath)
-          .getDownloadURL()
-          .catchError((_) => null); // Use default if not found
+      try {
+        bannerImageUrl =
+            await FirebaseStorage.instance.ref(bannerPath).getDownloadURL();
+      } catch (e) {
+        print('Banner image not found: $e');
+        bannerImageUrl = null; // Set to null if not found
+      }
 
-      setState(() {});
+      setState(() {}); // Ensure UI updates after fetching images
     } catch (e) {
       print('Error fetching images: $e');
     }
@@ -81,7 +87,12 @@ class _NavdrawerState extends State<Navdrawer> {
     try {
       String imagePath = 'users/${user!.uid}/$type.jpg';
       await FirebaseStorage.instance.ref(imagePath).putFile(File(image.path));
-      await fetchProfileAndBannerImages();
+
+      // Fetch the updated profile and banner images
+      await fetchProfileAndBannerImages(); // Refresh the images
+
+      // Optionally, you can set the profileImageUrl or bannerImageUrl directly here
+      // if you want to avoid fetching again
     } catch (e) {
       print('Error uploading image: $e');
     }
@@ -91,7 +102,7 @@ class _NavdrawerState extends State<Navdrawer> {
     try {
       String imagePath = 'users/${user!.uid}/$type.jpg';
       await FirebaseStorage.instance.ref(imagePath).delete();
-      await fetchProfileAndBannerImages();
+      await fetchProfileAndBannerImages(); // Refresh the images after deletion
     } catch (e) {
       print('Error removing image: $e');
     }
