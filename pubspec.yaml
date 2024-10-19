@@ -42,6 +42,7 @@ dependencies:
   permission_handler: ^10.2.0
   camera: ^0.10.0+4
   firebase_storage: ^12.3.3
+  flutter_launcher_icons: ^0.13.1
 
 dev_dependencies:
   flutter_test:
