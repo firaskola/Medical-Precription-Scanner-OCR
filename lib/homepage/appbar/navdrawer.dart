@@ -54,30 +54,50 @@ class _NavdrawerState extends State<Navdrawer> {
     // Navigate back to login or any other page after sign-out if needed
   }
 
-  // Confirmation dialog for sign-out
   void _confirmSignOut() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm Sign Out'),
-          content: const Text('Are you sure you want to sign out?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                await signout();
-                Navigator.of(context).pop(); // Close the dialog
-                // Optionally navigate to the login page or perform other actions
-              },
-              child: const Text('Sign Out'),
-            ),
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: Icon(CupertinoIcons.square_arrow_right,
+                    color: Colors.redAccent),
+                title: const Text(
+                  'Sign Out',
+                  style: TextStyle(
+                      color: Colors.redAccent, fontWeight: FontWeight.bold),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await signout();
+                  // Optionally navigate to the login page or perform other actions after signing out
+                },
+              ),
+              Divider(
+                color: Theme.of(context).primaryColor,
+                thickness: 1.0,
+                indent: 8.0,
+                endIndent: 8.0,
+              ),
+              ListTile(
+                leading: Icon(CupertinoIcons.xmark,
+                    color: Theme.of(context).primaryColor),
+                title: const Text('Cancel'),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                onTap: () {
+                  Navigator.pop(context); // Close the bottom sheet
+                },
+              ),
+            ],
+          ),
         );
       },
     );
