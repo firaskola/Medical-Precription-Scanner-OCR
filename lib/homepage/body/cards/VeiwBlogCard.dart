@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+
 class VeiwBlogCard extends StatelessWidget {
   const VeiwBlogCard({super.key});
 
@@ -56,7 +57,7 @@ class VeiwBlogCard extends StatelessWidget {
                           WidgetStateProperty.all<Color>(Colors.black),
                     ),
                     onPressed: () {
-                      // Add your onPressed action here
+                     
                     },
                     child: Text(
                       'View Blog',

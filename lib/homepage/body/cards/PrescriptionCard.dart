@@ -1,47 +1,84 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:camera/camera.dart';
+import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PrescriptionCard extends StatelessWidget {
-  const PrescriptionCard({super.key});
+  const PrescriptionCard({Key? key}) : super(key: key);
 
-  Future<bool> isCameraAvailable() async {
-    try {
-      final cameras = await availableCameras();
-      if (cameras.isNotEmpty) {
-        for (var camera in cameras) {
-          print('Camera found: ${camera.name}');
-        }
-        return true;
-      } else {
-        print("No cameras found.");
-        return false;
-      }
-    } catch (e) {
-      print("Camera error: $e");
-      return false;
-    }
-  }
-
+  // Method to pick image from gallery or camera
   Future<void> _pickImage(BuildContext context, ImageSource source) async {
-    if (source == ImageSource.camera) {
-      final cameraAvailable = await isCameraAvailable();
-      if (!cameraAvailable) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Camera is not available")),
-        );
-        return;
-      }
-    }
-
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: source);
 
     if (image != null) {
       print("Image path: ${image.path}");
+      try {
+        final response = await _sendImageToApi(image.path);
+        if (response.statusCode == 200) {
+          final parsedData = jsonDecode(response.body);
+          print("Response: $parsedData");
+
+          // Upload the extracted data to Firestore
+          await _uploadPatientData(parsedData);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    "Image uploaded successfully!\nPatient Name: ${parsedData['patient_name']}")),
+          );
+        } else {
+          print("Failed to upload image: ${response.body}");
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Failed to upload image.")),
+          );
+        }
+      } catch (e) {
+        print("Error: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("An error occurred while uploading.")),
+        );
+      }
     } else {
       print('No image selected');
+    }
+  }
+
+  // Send image to Flask API and get response
+  Future<http.Response> _sendImageToApi(String imagePath) async {
+    final Uri uri = Uri.parse(
+        'http://192.168.1.14:6000/upload'); // Update with your Flask API URL
+    final request = http.MultipartRequest('POST', uri);
+    request.files.add(await http.MultipartFile.fromPath('image', imagePath));
+    final streamedResponse = await request.send();
+    return await http.Response.fromStream(streamedResponse);
+  }
+
+  // Upload the patient data to Firebase Firestore
+  Future<void> _uploadPatientData(Map<String, dynamic> patientData) async {
+    // Ensure the user is logged in
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final userId = user.uid;
+
+      // Reference to the Firestore collection for the logged-in user
+      final patientsRef = FirebaseFirestore.instance
+          .collection('Medicare')
+          .doc('users')
+          .collection('users')
+          .doc(userId)
+          .collection('patients');
+
+      // Add new patient document with extracted data
+      await patientsRef.add(patientData);
+      print("Patient data uploaded to Firestore successfully!");
+    } else {
+      print("User is not logged in!");
     }
   }
 
@@ -53,16 +90,16 @@ class PrescriptionCard extends StatelessWidget {
         top: 16.0,
         right: 16.0,
         bottom: 0.0,
-      ), // Standard margin around the container
+      ),
       child: AspectRatio(
-        aspectRatio: 16 / 9, // Set the aspect ratio to 16:9
+        aspectRatio: 16 / 9,
         child: Container(
           decoration: BoxDecoration(
             image: const DecorationImage(
               image: AssetImage('assets/4.jpg'),
               fit: BoxFit.cover,
             ),
-            borderRadius: BorderRadius.circular(20.0), // Rounded corners
+            borderRadius: BorderRadius.circular(20.0),
           ),
           child: Stack(
             children: [
@@ -79,23 +116,22 @@ class PrescriptionCard extends StatelessWidget {
                 ),
               ),
               Positioned(
-                right: 16.0, // Right margin
-                bottom: 16.0, // Bottom margin
+                right: 16.0,
+                bottom: 16.0,
                 child: SizedBox(
-                  width: MediaQuery.of(context).size.width *
-                      0.35, // Set button width to 35% of screen width
+                  width: MediaQuery.of(context).size.width * 0.35,
                   child: TextButton(
                     style: ButtonStyle(
-                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      backgroundColor: WidgetStateProperty.all<Color>(
+                      backgroundColor: MaterialStateProperty.all<Color>(
                         Theme.of(context).primaryColor,
                       ),
                       foregroundColor:
-                          WidgetStateProperty.all<Color>(Colors.black),
+                          MaterialStateProperty.all<Color>(Colors.black),
                     ),
                     onPressed: () {
                       showModalBottomSheet(
