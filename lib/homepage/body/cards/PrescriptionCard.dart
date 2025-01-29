@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:image_picker/image_picker.dart';
@@ -8,8 +6,16 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class PrescriptionCard extends StatelessWidget {
-  const PrescriptionCard({Key? key}) : super(key: key);
+class PrescriptionCard extends StatefulWidget {
+  const PrescriptionCard({super.key});
+
+  @override
+  State<PrescriptionCard> createState() => _PrescriptionCardState();
+}
+
+class _PrescriptionCardState extends State<PrescriptionCard> {
+  bool _isLoading = false;
+  String? _outputText; // Store extracted text from API response
 
   // Method to pick image from gallery or camera
   Future<void> _pickImage(BuildContext context, ImageSource source) async {
@@ -17,32 +23,43 @@ class PrescriptionCard extends StatelessWidget {
     final XFile? image = await picker.pickImage(source: source);
 
     if (image != null) {
-      print("Image path: ${image.path}");
+      setState(() {
+        _isLoading = true; // Show loading indicator
+        _outputText = "Processing...";
+      });
+
       try {
         final response = await _sendImageToApi(image.path);
         if (response.statusCode == 200) {
           final parsedData = jsonDecode(response.body);
           print("Response: $parsedData");
 
-          // Upload the extracted data to Firestore
           await _uploadPatientData(parsedData);
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(
-                    "Image uploaded successfully!\nPatient Name: ${parsedData['patient_name']}")),
-          );
+          setState(() {
+            _isLoading = false; // Hide loading indicator
+            _outputText = "Processing Complete"; // Show success message
+          });
+
+// Remove the banner after 3 seconds
+          Future.delayed(const Duration(seconds: 3), () {
+            setState(() {
+              _outputText = null;
+            });
+          });
         } else {
           print("Failed to upload image: ${response.body}");
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Failed to upload image.")),
-          );
+          setState(() {
+            _isLoading = false;
+            _outputText = "Processing Failed"; // Show failure message
+          });
         }
       } catch (e) {
         print("Error: $e");
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("An error occurred while uploading.")),
-        );
+        setState(() {
+          _isLoading = false;
+          _outputText = "Processing Failed"; // Handle errors
+        });
       }
     } else {
       print('No image selected');
@@ -61,12 +78,9 @@ class PrescriptionCard extends StatelessWidget {
 
   // Upload the patient data to Firebase Firestore
   Future<void> _uploadPatientData(Map<String, dynamic> patientData) async {
-    // Ensure the user is logged in
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       final userId = user.uid;
-
-      // Reference to the Firestore collection for the logged-in user
       final patientsRef = FirebaseFirestore.instance
           .collection('Medicare')
           .doc('users')
@@ -74,7 +88,6 @@ class PrescriptionCard extends StatelessWidget {
           .doc(userId)
           .collection('patients');
 
-      // Add new patient document with extracted data
       await patientsRef.add(patientData);
       print("Patient data uploaded to Firestore successfully!");
     } else {
@@ -122,16 +135,16 @@ class PrescriptionCard extends StatelessWidget {
                   width: MediaQuery.of(context).size.width * 0.35,
                   child: TextButton(
                     style: ButtonStyle(
-                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                      shape: WidgetStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      backgroundColor: MaterialStateProperty.all<Color>(
+                      backgroundColor: WidgetStateProperty.all<Color>(
                         Theme.of(context).primaryColor,
                       ),
                       foregroundColor:
-                          MaterialStateProperty.all<Color>(Colors.black),
+                          WidgetStateProperty.all<Color>(Colors.black),
                     ),
                     onPressed: () {
                       showModalBottomSheet(
@@ -149,8 +162,8 @@ class PrescriptionCard extends StatelessWidget {
                                 InkWell(
                                   borderRadius: BorderRadius.circular(8),
                                   onTap: () {
-                                    _pickImage(context, ImageSource.gallery);
                                     Navigator.pop(context);
+                                    _pickImage(context, ImageSource.gallery);
                                   },
                                   child: ListTile(
                                     leading: Icon(
@@ -171,8 +184,8 @@ class PrescriptionCard extends StatelessWidget {
                                 InkWell(
                                   borderRadius: BorderRadius.circular(8),
                                   onTap: () {
-                                    _pickImage(context, ImageSource.camera);
                                     Navigator.pop(context);
+                                    _pickImage(context, ImageSource.camera);
                                   },
                                   child: ListTile(
                                     leading: Icon(
@@ -205,6 +218,41 @@ class PrescriptionCard extends StatelessWidget {
                   ),
                 ),
               ),
+
+              // Loading Indicator
+              if (_isLoading)
+                Center(
+                  child: Container(
+                    //color: Colors.black54,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                ),
+
+              // Display Output if API Response is Received
+              if (_outputText != null)
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _outputText!,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
