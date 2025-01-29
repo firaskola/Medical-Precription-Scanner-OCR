@@ -52,7 +52,7 @@ class PrescriptionCard extends StatelessWidget {
   // Send image to Flask API and get response
   Future<http.Response> _sendImageToApi(String imagePath) async {
     final Uri uri = Uri.parse(
-        'http://192.168.1.14:6000/upload'); // Update with your Flask API URL
+        'https://medicare.hubzero.in/upload'); // Update with your Flask API URL
     final request = http.MultipartRequest('POST', uri);
     request.files.add(await http.MultipartFile.fromPath('image', imagePath));
     final streamedResponse = await request.send();
